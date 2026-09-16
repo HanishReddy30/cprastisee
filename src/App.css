@@ -884,6 +884,64 @@ code, pre {
   outline: none;
 }
 
+/* Custom Input Section */
+.custom-input-section {
+  padding: 10px 16px;
+  background: #172132;
+  border-bottom: 1px solid #334155;
+}
+
+.custom-input-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #cbd5e1;
+  cursor: pointer;
+  user-select: none;
+}
+
+.custom-input-checkbox-label input[type="checkbox"] {
+  accent-color: var(--accent-teal);
+  cursor: pointer;
+}
+
+.custom-input-wrapper {
+  margin-top: 10px;
+}
+
+.custom-input-textarea {
+  width: 100%;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  color: #f8fafc;
+  outline: none;
+  resize: vertical;
+  min-height: 65px;
+  transition: border-color 0.15s ease;
+}
+
+.custom-input-textarea:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.15);
+}
+
+.run-button.custom-active {
+  background: #0369a1;
+  border-color: #0284c7;
+  color: #ffffff;
+}
+
+.run-button.custom-active:hover:not(:disabled) {
+  background: #0284c7;
+}
+
 .editor-actions {
   display: flex;
   align-items: center;

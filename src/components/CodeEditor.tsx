@@ -1,7 +1,7 @@
 import CodeMirror from '@uiw/react-codemirror';
 import { cpp } from '@codemirror/lang-cpp';
 import { oneDark } from '@codemirror/theme-one-dark';
-import { Play, Send, RotateCcw, Code, Loader2 } from 'lucide-react';
+import { Play, Send, RotateCcw, Code, Loader2, SlidersHorizontal } from 'lucide-react';
 
 type CodeEditorProps = {
   code: string;
@@ -10,6 +10,10 @@ type CodeEditorProps = {
   onSubmit: () => void;
   isRunning: boolean;
   onReset: () => void;
+  customInput: string;
+  onCustomInputChange: (val: string) => void;
+  useCustomInput: boolean;
+  onToggleCustomInput: (val: boolean) => void;
 };
 
 export default function CodeEditor({
@@ -19,6 +23,10 @@ export default function CodeEditor({
   onSubmit,
   isRunning,
   onReset,
+  customInput,
+  onCustomInputChange,
+  useCustomInput,
+  onToggleCustomInput,
 }: CodeEditorProps) {
   return (
     <div className="editor-panel">
@@ -45,7 +53,7 @@ export default function CodeEditor({
       <div className="codemirror-wrapper">
         <CodeMirror
           value={code}
-          height="380px"
+          height="370px"
           extensions={[cpp()]}
           theme={oneDark}
           onChange={onChange}
@@ -61,20 +69,53 @@ export default function CodeEditor({
         />
       </div>
 
+      {/* Custom Input Section */}
+      <div className="custom-input-section">
+        <label className="custom-input-checkbox-label">
+          <input
+            type="checkbox"
+            checked={useCustomInput}
+            onChange={(e) => onToggleCustomInput(e.target.checked)}
+            disabled={isRunning}
+          />
+          <SlidersHorizontal size={13} />
+          <span>Test against custom input</span>
+        </label>
+
+        {useCustomInput && (
+          <div className="custom-input-wrapper">
+            <textarea
+              className="custom-input-textarea"
+              placeholder="Enter your custom input (stdin) here... e.g. values to be read by scanf()"
+              value={customInput}
+              onChange={(e) => onCustomInputChange(e.target.value)}
+              disabled={isRunning}
+              rows={3}
+            />
+          </div>
+        )}
+      </div>
+
       <div className="editor-actions">
         <div className="editor-actions-left">
-          <span className="shortcut-hint">Ready to compile & test</span>
+          <span className="shortcut-hint">
+            {useCustomInput ? 'Will execute with your custom stdin' : 'Ready to compile & test'}
+          </span>
         </div>
         <div className="editor-actions-right">
           <button
             type="button"
-            className="run-button"
+            className={`run-button ${useCustomInput ? 'custom-active' : ''}`}
             onClick={onRun}
             disabled={isRunning}
-            title="Run against visible sample test cases"
+            title={useCustomInput ? 'Run code with custom input' : 'Run against sample test cases'}
           >
-            {isRunning ? <Loader2 size={14} className="spin" /> : <Play size={14} fill="currentColor" />}
-            <span>Run Code</span>
+            {isRunning ? (
+              <Loader2 size={14} className="spin" />
+            ) : (
+              <Play size={14} fill="currentColor" />
+            )}
+            <span>{useCustomInput ? 'Run with Custom Input' : 'Run Code'}</span>
           </button>
           <button
             type="button"

@@ -37,7 +37,22 @@ export type TestResult = {
   stderr?: string
 }
 
-export type SubmissionStatus = 'idle' | 'running' | 'compileError' | 'allPassed' | 'someFailed'
+export type CustomExecutionResult = {
+  stdin: string
+  stdout: string
+  stderr: string
+  exitCode: number
+  timedOut: boolean
+}
+
+export type SubmissionStatus =
+  | 'idle'
+  | 'running'
+  | 'compileError'
+  | 'allPassed'
+  | 'someFailed'
+  | 'customSuccess'
+  | 'customError'
 
 export type CategoryInfo = {
   label: Category

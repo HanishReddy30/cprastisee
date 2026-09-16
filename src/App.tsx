@@ -1,12 +1,13 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { exercises, categories } from './data/exercises';
-import type { Category, Exercise, SubmissionStatus, TestCase, TestResult } from './types';
+import type { Category, Exercise, SubmissionStatus, TestCase, TestResult, CustomExecutionResult } from './types';
 import Header from './components/Header';
 import MainPage from './components/MainPage';
 import ProblemPanel from './components/ProblemPanel';
 import CodeEditor from './components/CodeEditor';
 import TestResults from './components/TestResults';
 import { runTests } from './services/testRunner';
+import { executeC } from './services/pistonApi';
 import './App.css';
 
 const LOCAL_STORAGE_COMPLETED_KEY = 'c-lab-complete';
@@ -37,6 +38,11 @@ export default function App() {
       return {};
     }
   });
+
+  // Custom input state
+  const [useCustomInput, setUseCustomInput] = useState<boolean>(false);
+  const [customInput, setCustomInput] = useState<string>('');
+  const [customResult, setCustomResult] = useState<CustomExecutionResult | null>(null);
 
   // Test execution state
   const [isRunning, setIsRunning] = useState<boolean>(false);
@@ -104,6 +110,7 @@ export default function App() {
     setShowSolution(false);
     setSubmissionStatus('idle');
     setTestResults([]);
+    setCustomResult(null);
     setCompileError(undefined);
   }, []);
 
@@ -143,20 +150,52 @@ export default function App() {
       });
       setSubmissionStatus('idle');
       setTestResults([]);
+      setCustomResult(null);
       setCompileError(undefined);
     }
   }, [selected.id]);
 
-  // Run visible/sample test cases
+  // Run visible test cases OR custom input
   const handleRunCode = async () => {
     if (isRunning) return;
 
-    const sampleCases = selected.testCases.filter((tc) => !tc.isHidden);
-    setCurrentTestCases(sampleCases);
     setIsRunning(true);
     setSubmissionStatus('running');
     setTestResults([]);
+    setCustomResult(null);
     setCompileError(undefined);
+
+    // If custom input is enabled, execute directly with student's stdin
+    if (useCustomInput) {
+      try {
+        const result = await executeC(currentCode, customInput);
+
+        if (result.compileError) {
+          setCompileError(result.compileError);
+          setSubmissionStatus('compileError');
+        } else {
+          setCustomResult({
+            stdin: customInput,
+            stdout: result.stdout,
+            stderr: result.stderr,
+            exitCode: result.exitCode,
+            timedOut: result.timedOut,
+          });
+          const isOk = result.exitCode === 0 && !result.timedOut;
+          setSubmissionStatus(isOk ? 'customSuccess' : 'customError');
+        }
+      } catch (error: any) {
+        setCompileError(error?.message || 'An unexpected error occurred during execution.');
+        setSubmissionStatus('compileError');
+      } finally {
+        setIsRunning(false);
+      }
+      return;
+    }
+
+    // Otherwise, run standard sample test cases
+    const sampleCases = selected.testCases.filter((tc) => !tc.isHidden);
+    setCurrentTestCases(sampleCases);
 
     try {
       const results = await runTests(currentCode, sampleCases, (partial) => {
@@ -191,6 +230,7 @@ export default function App() {
     setIsRunning(true);
     setSubmissionStatus('running');
     setTestResults([]);
+    setCustomResult(null);
     setCompileError(undefined);
 
     try {
@@ -274,6 +314,10 @@ export default function App() {
               onSubmit={handleSubmitCode}
               isRunning={isRunning}
               onReset={handleResetCode}
+              customInput={customInput}
+              onCustomInputChange={setCustomInput}
+              useCustomInput={useCustomInput}
+              onToggleCustomInput={setUseCustomInput}
             />
 
             <TestResults
@@ -281,6 +325,7 @@ export default function App() {
               testCases={currentTestCases.length > 0 ? currentTestCases : selected.testCases}
               status={submissionStatus}
               compileError={compileError}
+              customResult={customResult}
               showHint={showHint}
               showSolution={showSolution}
               hint={selected.hint}

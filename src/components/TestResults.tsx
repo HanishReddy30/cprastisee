@@ -9,15 +9,17 @@ import {
   CircleHelp,
   Loader2,
   EyeOff,
-  Code2
+  Code2,
+  SlidersHorizontal,
 } from 'lucide-react';
-import type { TestResult, TestCase, SubmissionStatus } from '../types';
+import type { TestResult, TestCase, SubmissionStatus, CustomExecutionResult } from '../types';
 
 type TestResultsProps = {
   results: TestResult[];
   testCases: TestCase[];
   status: SubmissionStatus;
   compileError?: string;
+  customResult?: CustomExecutionResult | null;
   showHint: boolean;
   showSolution: boolean;
   hint: string;
@@ -31,6 +33,7 @@ export default function TestResults({
   testCases,
   status,
   compileError,
+  customResult,
   showHint,
   showSolution,
   hint,
@@ -47,7 +50,7 @@ export default function TestResults({
           <Terminal size={22} className="text-muted" />
           <div className="results-empty-title">Ready to Test Your Solution</div>
           <p className="results-empty-desc">
-            Click <strong>Run Code</strong> to test against sample cases, or <strong>Submit</strong> to evaluate against all test cases.
+            Click <strong>Run Code</strong> to test against sample cases, enable <strong>Test against custom input</strong> to provide your own input, or <strong>Submit</strong> to evaluate all test cases.
           </p>
         </div>
 
@@ -82,7 +85,7 @@ export default function TestResults({
       <div className="results-panel">
         <div className="results-loading">
           <Loader2 size={24} className="spin text-accent" />
-          <div className="results-loading-title">Compiling and running against test cases...</div>
+          <div className="results-loading-title">Compiling and running your C code...</div>
           <p className="results-empty-desc">Executing in secure container sandbox via GCC</p>
         </div>
       </div>
@@ -98,6 +101,92 @@ export default function TestResults({
             <strong>Compilation Error</strong>
           </div>
           <pre className="compile-error-log"><code>{compileError}</code></pre>
+        </div>
+
+        <div className="support-row">
+          <button type="button" className="support-btn" onClick={onToggleHint}>
+            <Lightbulb size={14} /> {showHint ? 'Hide Hint' : 'Need a Hint?'}
+          </button>
+          <button type="button" className="support-btn" onClick={onToggleSolution}>
+            <CircleHelp size={14} /> {showSolution ? 'Hide Solution' : 'View Reference Solution'}
+          </button>
+        </div>
+
+        {showHint && (
+          <div className="reveal-box hint-box">
+            <Lightbulb size={16} />
+            <span>{hint}</span>
+          </div>
+        )}
+
+        {showSolution && (
+          <div className="reveal-box solution-box">
+            <div className="solution-title"><Code2 size={14} /> Reference Solution (C)</div>
+            <pre><code>{solutionCode}</code></pre>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Custom input execution results view
+  if ((status === 'customSuccess' || status === 'customError') && customResult) {
+    const isSuccess = status === 'customSuccess';
+    return (
+      <div className="results-panel">
+        <div className={`results-banner ${isSuccess ? 'banner-accepted' : 'banner-failed'}`}>
+          <div className="banner-left">
+            {isSuccess ? (
+              <CheckCircle2 size={20} className="banner-icon text-success" />
+            ) : (
+              <XCircle size={20} className="banner-icon text-danger" />
+            )}
+            <div>
+              <div className="banner-title">
+                {customResult.timedOut
+                  ? 'Time Limit Exceeded'
+                  : isSuccess
+                  ? 'Executed Successfully'
+                  : 'Runtime Error'}
+              </div>
+              <div className="banner-subtitle">
+                Executed with custom input stdin (Exit code: {customResult.exitCode})
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="test-case-card">
+          <div className="test-case-meta">
+            <span className="case-title">
+              <SlidersHorizontal size={13} style={{ marginRight: 6, verticalAlign: 'middle' }} />
+              Custom Input Execution
+            </span>
+            <span className={`case-badge ${isSuccess ? 'status-passed' : 'status-failed'}`}>
+              {isSuccess ? 'SUCCESS' : 'ERROR'}
+            </span>
+          </div>
+
+          <div className="io-compare-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+            <div className="io-column">
+              <div className="io-header">Your Custom Input (stdin)</div>
+              <pre className="io-block"><code>{customResult.stdin || '<no input provided>'}</code></pre>
+            </div>
+
+            <div className="io-column">
+              <div className="io-header">Program Output (stdout)</div>
+              <pre className={`io-block ${isSuccess ? 'actual-pass' : 'actual-fail'}`}>
+                <code>{customResult.stdout || '<no output printed>'}</code>
+              </pre>
+            </div>
+          </div>
+
+          {customResult.stderr && (
+            <div className="stderr-block">
+              <div className="io-header text-danger">Runtime stderr / messages:</div>
+              <pre className="io-block stderr-content"><code>{customResult.stderr}</code></pre>
+            </div>
+          )}
         </div>
 
         <div className="support-row">
