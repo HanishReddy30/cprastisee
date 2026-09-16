@@ -12,10 +12,25 @@ import './App.css';
 
 const LOCAL_STORAGE_COMPLETED_KEY = 'c-lab-complete';
 const LOCAL_STORAGE_CODES_KEY = 'c-lab-user-codes';
+const LOCAL_STORAGE_VIEW_KEY = 'c-lab-view';
+const LOCAL_STORAGE_SELECTED_KEY = 'c-lab-selected-exercise';
 
 export default function App() {
-  const [viewMode, setViewMode] = useState<'list' | 'solve'>('list');
-  const [selectedId, setSelectedId] = useState<number>(1);
+  const [viewMode, setViewMode] = useState<'list' | 'solve'>(() => {
+    try {
+      return localStorage.getItem(LOCAL_STORAGE_VIEW_KEY) === 'solve' ? 'solve' : 'list';
+    } catch {
+      return 'list';
+    }
+  });
+  const [selectedId, setSelectedId] = useState<number>(() => {
+    try {
+      const saved = Number(localStorage.getItem(LOCAL_STORAGE_SELECTED_KEY));
+      return exercises.some((exercise) => exercise.id === saved) ? saved : 1;
+    } catch {
+      return 1;
+    }
+  });
   const [category, setCategory] = useState<Category>('All');
   const [query, setQuery] = useState<string>('');
 
@@ -101,6 +116,16 @@ export default function App() {
       console.error('Failed to save code to localStorage', e);
     }
   }, [userCodes]);
+
+  // Restore the current problem after a browser refresh.
+  useEffect(() => {
+    try {
+      localStorage.setItem(LOCAL_STORAGE_VIEW_KEY, viewMode);
+      localStorage.setItem(LOCAL_STORAGE_SELECTED_KEY, String(selectedId));
+    } catch (e) {
+      console.error('Failed to save current exercise to localStorage', e);
+    }
+  }, [viewMode, selectedId]);
 
   // Switch to problem solve view
   const handleSelectExercise = useCallback((id: number) => {
